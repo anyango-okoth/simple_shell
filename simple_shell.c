@@ -53,7 +53,7 @@ void interactive_mode(void)
 /**
  * main - Entry point to a program
  * @argc: The number of command-line arguments
- * @argv: An array of strings representing thecommand-line arguments
+ * @argv: An array of strings representing the command-line arguments
  * Return: 0 (success)
  */
 int main(int argc, char *argv[])
@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 	char *commands[MAX_COMMANDS][MAX_ARGS];
 	int num_commands;
 	int i;
+	int lines_read = 0;
 
 	if (argc == 2)
 	{
@@ -72,8 +73,7 @@ int main(int argc, char *argv[])
 			printf("Failed to open file: %s\n", argv[1]);
 			return (1);
 		}
-
-		while (fgets(line, sizeof(line), file))
+		while (lines_read < 2 && fgets(line, sizeof(line), file))
 		{
 			line[strcspn(line, "\n")] = '\0';
 
@@ -89,13 +89,40 @@ int main(int argc, char *argv[])
 					free(commands[i][j]);
 				}
 			}
+
+			lines_read++;
 		}
 
 		fclose(file);
 		return (0);
 	}
 
-	interactive_mode();
+	if (!isatty(STDIN_FILENO))
+	{
+		while (lines_read < 2 && fgets(line, sizeof(line), stdin))
+		{
+			line[strcspn(line, "\n")] = '\0';
+
+			num_commands = parse_commands(line, commands);
+			execute_commands(commands, num_commands);
+
+			for (i = 0; i < num_commands; i++)
+			{
+				int j;
+
+				for (j = 0; j < MAX_ARGS; j++)
+				{
+					free(commands[i][j]);
+				}
+			}
+
+			lines_read++;
+		}
+	}
+	else
+	{
+		interactive_mode();
+	}
 
 	return (0);
 }
