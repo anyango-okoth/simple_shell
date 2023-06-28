@@ -7,66 +7,71 @@
 #include "main.h"
 
 /**
- * executeCommand - Executes commands provided in the @args array
- *                  within the context of the shell environment.
- *
- * @args: An array of command arguments.
- * @envp: The environment variables (unused).
- *
- * Description:
- * This function supports two types of commands: "cd" and general commands.
- * The "cd" command changes the directory based on args[1].
- * The general command creates a child process using fork().
+ * execute_commands - Executes a list of commands
+ * @commands: The commands array
+ * @num_commands: The number of commands
+ * Return: 0(success)
  */
-void executeCommand(char *args[], char *envp[])
+void execute_commands(char *commands[MAX_COMMANDS][MAX_ARGS], int num_commands)
 {
-	if (args[0] != NULL)
+	int i, last_status = 0;
+
+	for (i = 0; i < num_commands; i++)
 	{
-		if (strcmp(args[0], "cd") == 0)
+		char *command = commands[i][0];
+
+		if (command == NULL || command[0] == '#')
+			continue;
+
+		if (strcmp(command, "exit") == 0)
+			exit(0);
+
+		if (strcmp(command, "env") == 0)
 		{
-			/* Handle 'cd' command separately */
-			if (args[1] == NULL || strcmp(args[1], "~") == 0)
-				args[1] = getenv("HOME");
-			else if (strcmp(args[1], "-") == 0)
-				args[1] = getenv("OLDPWD");
+			char **env = __environ;
 
-			if (chdir(args[1]) == 0)
+			while (*env)
 			{
-				/* Update current directory environment variables */
-				char currentDir[1024];
+				printf("%s\n", *env++);
+				continue;
+			}
+		}
 
-				getcwd(currentDir, sizeof(currentDir));
-				setenv("PWD", currentDir, 1);
-				setenv("OLDPWD", getenv("PWD"), 1);
-			}
-			else
+		if (is_built_in_command(command))
+		{
+			if (strcmp(command, "cd") == 0)
 			{
-				fprintf(stderr, "Failed to change directory\n");
+				if (commands[i][1] == NULL)
+					printf("Missing directory argument for cd command\n");
+				else if (chdir(commands[i][1]) != 0)
+					printf("Failed to change directory\n");
 			}
+			else if (strcmp(command, "exit") == 0)
+				exit(0);
 		}
 		else
 		{
-			/* Fork and execute the command */
 			pid_t pid = fork();
 
-			if (pid < 0)
+			if (pid == 0)
 			{
-				fprintf(stderr, "Fork failed\n");
-				exit(EXIT_FAILURE);
+				handle_variables(command, last_status);
+				execvp(command, commands[i]);
+				printf("No such file or directory: %s\n", command);
+				exit(1);
 			}
-			else if (pid == 0)
+			else if (pid > 0 && !is_background_command(command))
 			{
-				/* Child process executes the command */
-				execvp(args[0], args);
-				fprintf(stderr, "Failed to execute command\n");
-				exit(EXIT_FAILURE);
+				int status;
+
+				waitpid(pid, &status, 0);
+				last_status = WIFEXITED(status) ? WEXITSTATUS(status) : 1;
 			}
-			else
+			else if (pid < 0)
 			{
-				/* Parent process waits for the child to complete */
-				wait(NULL);
+				printf("Failed to fork process\n");
+				exit(1);
 			}
 		}
 	}
-	(void)envp; /* Avoid "unused parameter" warning */
 }
