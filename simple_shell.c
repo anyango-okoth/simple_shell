@@ -8,121 +8,121 @@
 /**
  * interactive_mode - Displays the interactive mode of the
  * shell program
- * Return: 0(success)
+ * Return: 0 (success)
  */
 void interactive_mode(void)
 {
-	char *input;
-	char *commands[MAX_COMMANDS][MAX_ARGS];
-	int num_commands;
-	int i;
+    char *input;
+    char *commands[MAX_COMMANDS][MAX_ARGS];
+    int num_commands;
+    int i;
 
-	while (1)
-	{
-		printf("Simple_shell$ ");
+    while (1)
+    {
+        display_prompt();
 
-		input = custom_getline();
+        input = custom_getline();
 
-		if (input == NULL)
-		{
-			printf("\n");
-			break;
-		}
+        if (input == NULL)
+        {
+            printf("\n");
+            break;
+        }
 
-		if (input[0] == '#')
-		{
-			continue;
-		}
+        if (input[0] == '#')
+        {
+            continue;
+        }
 
-		num_commands = parse_commands(input, commands);
-		execute_commands(commands, num_commands);
+        num_commands = parse_commands(input, commands);
+        execute_commands(commands, num_commands);
 
-		for (i = 0; i < num_commands; i++)
-		{
-			int j;
+        for (i = 0; i < num_commands; i++)
+        {
+            int j;
 
-			for (j = 0; j < MAX_ARGS; j++)
-			{
-				free(commands[i][j]);
-			}
-		}
-		free(input);
-	}
+            for (j = 0; j < MAX_ARGS; j++)
+            {
+                free(commands[i][j]);
+            }
+        }
+        free(input);
+    }
 }
 
 /**
- * main - Entry point to a program
+ * main - Entry point to the program
  * @argc: The number of command-line arguments
  * @argv: An array of strings representing the command-line arguments
  * Return: 0 (success)
  */
 int main(int argc, char *argv[])
 {
-	char line[100];
-	char *commands[MAX_COMMANDS][MAX_ARGS];
-	int num_commands;
-	int i;
-	int lines_read = 0;
+    char line[MAX_INPUT_SIZE];
+    char *commands[MAX_COMMANDS][MAX_ARGS];
+    int num_commands;
+    int i;
+    int lines_read = 0;
 
-	if (argc == 2)
-	{
-		FILE *file = fopen(argv[1], "r");
+    if (argc == 2)
+    {
+        FILE *file = fopen(argv[1], "r");
 
-		if (file == NULL)
-		{
-			printf("Failed to open file: %s\n", argv[1]);
-			return (1);
-		}
-		while (lines_read < 2 && fgets(line, sizeof(line), file))
-		{
-			line[strcspn(line, "\n")] = '\0';
+        if (file == NULL)
+        {
+            printf("Failed to open file: %s\n", argv[1]);
+            return 1;
+        }
+        while (lines_read < 2 && fgets(line, sizeof(line), file))
+        {
+            line[strcspn(line, "\n")] = '\0';
 
-			num_commands = parse_commands(line, commands);
-			execute_commands(commands, num_commands);
+            num_commands = parse_commands(line, commands);
+            execute_commands(commands, num_commands);
 
-			for (i = 0; i < num_commands; i++)
-			{
-				int j;
+            for (i = 0; i < num_commands; i++)
+            {
+                int j;
 
-				for (j = 0; j < MAX_ARGS; j++)
-				{
-					free(commands[i][j]);
-				}
-			}
+                for (j = 0; j < MAX_ARGS; j++)
+                {
+                    free(commands[i][j]);
+                }
+            }
 
-			lines_read++;
-		}
+            lines_read++;
+        }
 
-		fclose(file);
-		return (0);
-	}
+        fclose(file);
+        return 0;
+    }
 
-	if (!isatty(STDIN_FILENO))
-	{
-		while (lines_read < 2 && fgets(line, sizeof(line), stdin))
-		{
-			line[strcspn(line, "\n")] = '\0';
+    if (!isatty(STDIN_FILENO))
+    {
+        while (lines_read < 2 && fgets(line, sizeof(line), stdin))
+        {
+            line[strcspn(line, "\n")] = '\0';
 
-			num_commands = parse_commands(line, commands);
-			execute_commands(commands, num_commands);
+            num_commands = parse_commands(line, commands);
+            execute_commands(commands, num_commands);
 
-			for (i = 0; i < num_commands; i++)
-			{
-				int j;
+            for (i = 0; i < num_commands; i++)
+            {
+                int j;
 
-				for (j = 0; j < MAX_ARGS; j++)
-				{
-					free(commands[i][j]);
-				}
-			}
+                for (j = 0; j < MAX_ARGS; j++)
+                {
+                    free(commands[i][j]);
+                }
+            }
 
-			lines_read++;
-		}
-	}
-	else
-	{
-		interactive_mode();
-	}
+            lines_read++;
+        }
 
-	return (0);
+        return 0;
+    }
+
+    interactive_mode();
+    return 0;
 }
+
